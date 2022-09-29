@@ -25,8 +25,7 @@ private:
     std::atomic<bool> stop = { false };             // Flag used to determine whether to terminate the thread
 };
 
-ThreadPool::ThreadPool(size_t pool_size)
-{
+ThreadPool::ThreadPool(size_t pool_size) {
     for (size_t i = 0; i < pool_size; ++i) workers.emplace_back([this] {        // Create pool_size threads
         while (true) {
             std::unique_lock<std::mutex> lock(queue_mutex);                     // Attempt to acquire mutex, otherwise block
@@ -44,8 +43,7 @@ ThreadPool::ThreadPool(size_t pool_size)
 
 template<class T, class... Args>
 auto ThreadPool::post(T&& task, Args&&... args) 
-    -> std::future<typename std::result_of<T(Args...)>::type> 
-{
+    -> std::future<typename std::result_of<T(Args...)>::type> {
     using return_type = typename std::result_of<T(Args...)>::type;
     auto _task = std::make_shared<std::packaged_task<return_type()>>(           // Encapsulate the task to be executed as packaged_task
         std::bind(task, std::forward<Args>(args)...)
@@ -59,15 +57,13 @@ auto ThreadPool::post(T&& task, Args&&... args)
     return res;
 }
 
-ThreadPool::~ThreadPool()
-{
+ThreadPool::~ThreadPool() {
     stop = true;
     condition.notify_all();                         // wake up all threads so they can terminate themselves
     for (auto&& worker : workers) worker.join();    // wait for all threads to exit
 }
 
-int main()
-{
+int main() {
     ThreadPool pool(3);                             // Set the number of threads in the thread pool
     std::future<int> result = pool.post([&]() {     // std::future<int> result = std::async(std::launch::async, [&]() {
         std::vector<std::future<int>> results;
